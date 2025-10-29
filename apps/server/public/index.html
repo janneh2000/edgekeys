@@ -88,7 +88,9 @@ function el(id){ return document.getElementById(id); }
 
 el('btnGen').onclick = async () => {
   const asset = el('asset').value;
-  const amount = parseFloat(el('amount').value || '0');
+  const rawAmt = (el('amount').value || '').trim().replace(',', '.');
+  const amount = parseFloat(rawAmt || '0');
+
   const r = await fetch('/api/checkout', {
     method: 'POST',
     headers: {'content-type': 'application/json'},
@@ -100,13 +102,14 @@ el('btnGen').onclick = async () => {
   reference = r.reference;
   lastUrl = r.url;
 
-  const svg = r.qrSvg;
-  el('genOut').innerHTML = `
-    <div>Reference: <span class="mono">${reference}</span></div>
-    <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
-    <div class="qr" id="qrBox">${svg}</div>
-    <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${lastUrl}</div>
-  `;
+  const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+el('genOut').innerHTML = `
+  <div>Reference: <span class="mono">${reference}</span></div>
+  <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
+  <div class="qr" id="qrBox"><img src="${svgDataUrl}" alt="QR" style="display:block;width:240px;height:240px"></div>
+  <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${lastUrl}</div>
+`;
+
 };
 
 el('btnPoll').onclick = async () => {
