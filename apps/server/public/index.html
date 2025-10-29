@@ -88,9 +88,7 @@ function el(id){ return document.getElementById(id); }
 
 el('btnGen').onclick = async () => {
   const asset = el('asset').value;
-  const rawAmt = (el('amount').value || '').trim().replace(',', '.');
-  const amount = parseFloat(rawAmt || '0');
-
+  const amount = parseFloat(el('amount').value || '0');
   const r = await fetch('/api/checkout', {
     method: 'POST',
     headers: {'content-type': 'application/json'},
@@ -102,45 +100,47 @@ el('btnGen').onclick = async () => {
   reference = r.reference;
   lastUrl = r.url;
 
-  const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-el('genOut').innerHTML = `
-  <div>Reference: <span class="mono">${reference}</span></div>
-  <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
-  <div class="qr" id="qrBox"><img src="${svgDataUrl}" alt="QR" style="display:block;width:240px;height:240px"></div>
-  <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${lastUrl}</div>
-`;
-
+  const svg = r.qrSvg;
+  el('genOut').innerHTML = `
+    <div>Reference: <span class="mono">${reference}</span></div>
+    <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
+    <div class="qr" id="qrBox">${svg}</div>
+    <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${lastUrl}</div>
+  `;
 };
 
-el('btnPoll').onclick = async () => {
-  if(!reference){ el('status').innerText = 'No reference yet — generate a QR first.'; return; }
-  const r = await fetch('/api/status?reference=' + encodeURIComponent(reference)).then(r=>r.json());
-  el('status').innerText = JSON.stringify(r, null, 2);
+el('btnGen').onclick = async () => {
+  try {
+    const rawAmt = (el('amount').value || '').trim().replace(',', '.');
+    const amount = parseFloat(rawAmt || '0');
+    const asset = el('asset').value;
+
+    const r = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({ asset, amount })
+    });
+
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || !data.ok) {
+      el('genOut').innerHTML = `<div class="mono">Error: ${data.error || r.status + ' ' + r.statusText}</div>`;
+      return;
+    }
+
+    const { reference, url, qrSvg } = data;
+    const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(qrSvg);
+
+    el('genOut').innerHTML = `
+      <div>Reference: <span class="mono">${reference}</span></div>
+      <div style="margin-top:8px"><a href="${url}">Open in wallet</a></div>
+      <div class="qr" id="qrBox"><img src="${svgDataUrl}" alt="QR" style="display:block;width:240px;height:240px"></div>
+      <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${url}</div>
+    `;
+  } catch (e) {
+    el('genOut').innerHTML = `<div class="mono">Network error: ${e?.message || e}</div>`;
+  }
 };
 
-el('btnIssue').onclick = async () => {
-  if(!reference){ alert('Generate a QR first.'); return; }
-  const userPubkey = el('pubkey').value.trim();
-  if(!userPubkey){ alert('Enter your wallet public key.'); return; }
-  const r = await fetch('/api/issue', {
-    method:'POST',
-    headers: {'content-type':'application/json'},
-    body: JSON.stringify({ reference, userPubkey })
-  }).then(r=>r.json());
-  jwtToken = r.token;
-  el('tokenOut').innerText = JSON.stringify(r, null, 2);
-};
-
-el('btnInfer').onclick = async () => {
-  if(!jwtToken){ alert('Issue a token first.'); return; }
-  const prompt = el('prompt').value;
-  const r = await fetch('/v1/infer', {
-    method:'POST',
-    headers: {'content-type':'application/json', 'authorization':'Bearer ' + jwtToken },
-    body: JSON.stringify({ prompt })
-  }).then(r=>r.json());
-  el('inferOut').innerText = JSON.stringify(r, null, 2);
-};
 </script>
 </body>
 </html>

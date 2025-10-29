@@ -29,13 +29,12 @@ export async function checkoutRoutes({ recipient, network }){
         url.searchParams.set('spl-token', mint);
       }
 
-      const qrSvg = await QRCode.toString(url.toString(), { type: 'svg', margin: 1 });
-      res.json({ ok:true, reference: ref, url: url.toString(), qrSvg });
-    }catch(e){
-      console.error(e);
-      res.status(500).json({ ok:false, error: e.message });
-    }
-  });
+      const qrSvg = await QRCode.toString(url.toString(), {
+        type: 'svg',
+        margin: 1,
+        color: { dark: '#000000', light: '#00000000' }
+      });
+      
 
   return router;
 }
