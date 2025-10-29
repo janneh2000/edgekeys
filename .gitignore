@@ -10,3 +10,10 @@ dist
 build
 coverage
 *.local
+.DS_Store
+node_modules
+.env
+.env.*
+dist
+build
+coverage
