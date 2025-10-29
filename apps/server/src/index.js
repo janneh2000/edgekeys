@@ -9,7 +9,8 @@ import { statusRoutes } from './routes/status.js';
 import { issueRoutes } from './routes/issue.js';
 import { inferRoutes } from './routes/infer.js';
 import { createStore } from './lib/store.js';
-import { createSession } from './lib/session.js';
+import createSession from './lib/session.js';
+
 
 dotenv.config();
 
