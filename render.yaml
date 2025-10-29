@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: edgekeys
+    env: docker
+    region: oregon
+    plan: free
+    rootDir: apps/server
+    envVars:
+      - key: RPC_URL
+        value: https://api.devnet.solana.com
+      - key: RECIPIENT
+        value: Gex8AA2MPfSpEQxmEqvpC7nwB8Qixws1LfvuBwfcTsvN
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NETWORK
+        value: devnet
+      # optional: set a devnet USDC mint if you want SPL payments
+      # - key: MINT_ADDRESS
+      #   value: <DEVNET_USDC_MINT>
