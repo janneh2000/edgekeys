@@ -46,3 +46,8 @@ Tech Stack: Node.js, Express, Solana Pay, JWT, Docker
 Future Roadmap: cNFT badge mint, on-chain webhook verification (Helius), local LLM (llama.cpp) container  
 Built by: Alie  Janneh (X:@cjanneh2000, github:janneh2000)
 
+  Live Demo
+- Render: https://edgekeys.onrender.com/index.html
+
+[![Open Demo](https://img.shields.io/badge/Demo-EdgeKeys-informational)](https://edgekeys.onrender.com/index.html)
+
