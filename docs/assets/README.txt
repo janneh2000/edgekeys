@@ -1,0 +1,1 @@
+Includes artwork such as the Blackbox 0G badge (copy from /apps/server/assets if needed).
