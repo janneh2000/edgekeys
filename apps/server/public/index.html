@@ -5,24 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EdgeKeys • Devnet Demo</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0b0f19;color:#eef;line-height:1.5;margin:0;padding:24px;}
-    .wrap{max-width:900px;margin:0 auto;}
+    :root{--bg:#0b0f19;--panel:#111729;--stroke:#2a3452;--text:#eef;--muted:#a9b8e8;--btn:#2b7bfa}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;margin:0;padding:24px}
+    .wrap{max-width:980px;margin:0 auto}
     h1{font-size:28px;margin:0 0 8px}
-    .card{background:#111729;border:1px solid #2a3452;border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 4px 16px rgba(0,0,0,0.25)}
-    label{display:block;font-size:14px;color:#a9b8e8;margin:8px 0 4px}
+    .badges .pill{display:inline-block;background:#1b2640;border:1px solid #344a79;color:#d0ddff;padding:4px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:16px;margin:16px 0;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+    label{display:block;font-size:14px;color:var(--muted);margin:8px 0 4px}
     input,select,button{font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid #3a466e;background:#0f1526;color:#e8eeff}
-    button{cursor:pointer;background:#2b7bfa;border-color:#2b7bfa;color:white}
+    button{cursor:pointer;background:var(--btn);border-color:var(--btn);color:#fff}
     button.secondary{background:#203055;border-color:#384b7a}
     .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .qr{background:white;border-radius:12px;padding:12px;display:inline-block;margin-top:12px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#b6c4ff}
-    a {color:#8ec1ff}
-    .pill{display:inline-block;background:#1b2640;border:1px solid #344a79;color:#d0ddff;padding:4px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#b6c4ff;white-space:pre-wrap;word-break:break-word}
+    a{color:#8ec1ff}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>EdgeKeys <span class="pill">Devnet</span> <span class="pill">QR → Pay → Token → Infer</span></h1>
+  <h1>EdgeKeys <span class="badges"><span class="pill">Devnet</span><span class="pill">QR → Pay → Token → Infer</span></span></h1>
 
   <div class="card">
     <h2>1) Generate Checkout</h2>
@@ -36,7 +38,7 @@
       </div>
       <div>
         <label>Amount</label>
-        <input id="amount" type="number" step="0.000001" value="0.01"/>
+        <input id="amount" type="text" value="0.01" inputmode="decimal" />
       </div>
       <div>
         <label>&nbsp;</label>
@@ -80,67 +82,101 @@
 </div>
 
 <script>
-let reference = null;
-let lastUrl = null;
-let jwtToken = null;
+  // helper
+  const el = (id) => document.getElementById(id);
+  let reference = null;
+  let lastUrl = null;
+  let jwtToken = null;
 
-function el(id){ return document.getElementById(id); }
-
-el('btnGen').onclick = async () => {
-  const asset = el('asset').value;
-  const amount = parseFloat(el('amount').value || '0');
-  const r = await fetch('/api/checkout', {
-    method: 'POST',
-    headers: {'content-type': 'application/json'},
-    body: JSON.stringify({ asset, amount })
-  }).then(r=>r.json());
-
-  if(!r.ok){ el('genOut').innerHTML = '<div class="mono">Error: '+(r.error||'unknown')+'</div>'; return; }
-
-  reference = r.reference;
-  lastUrl = r.url;
-
-  const svg = r.qrSvg;
-  el('genOut').innerHTML = `
-    <div>Reference: <span class="mono">${reference}</span></div>
-    <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
-    <div class="qr" id="qrBox">${svg}</div>
-    <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${lastUrl}</div>
-  `;
-};
-
-el('btnGen').onclick = async () => {
-  try {
-    const rawAmt = (el('amount').value || '').trim().replace(',', '.');
-    const amount = parseFloat(rawAmt || '0');
-    const asset = el('asset').value;
-
-    const r = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: {'content-type': 'application/json'},
-      body: JSON.stringify({ asset, amount })
-    });
-
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok || !data.ok) {
-      el('genOut').innerHTML = `<div class="mono">Error: ${data.error || r.status + ' ' + r.statusText}</div>`;
-      return;
-    }
-
-    const { reference, url, qrSvg } = data;
-    const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(qrSvg);
-
-    el('genOut').innerHTML = `
-      <div>Reference: <span class="mono">${reference}</span></div>
-      <div style="margin-top:8px"><a href="${url}">Open in wallet</a></div>
-      <div class="qr" id="qrBox"><img src="${svgDataUrl}" alt="QR" style="display:block;width:240px;height:240px"></div>
-      <div class="mono" style="margin-top:8px;word-break:break-all">URL: ${url}</div>
-    `;
-  } catch (e) {
-    el('genOut').innerHTML = `<div class="mono">Network error: ${e?.message || e}</div>`;
+  // Show errors on screen
+  function showError(containerId, err) {
+    const msg = (err && (err.error || err.message)) ? (err.error || err.message) : String(err);
+    const box = el(containerId);
+    if (box) box.innerHTML = `<div class="mono">Error: ${msg}</div>`;
   }
-};
 
+  // 1) Generate checkout
+  el('btnGen').onclick = async () => {
+    try {
+      const asset = el('asset').value;
+      const rawAmt = (el('amount').value || '').trim().replace(',', '.');
+      const amount = parseFloat(rawAmt || '0');
+
+      const r = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({ asset, amount })
+      });
+
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data.ok) return showError('genOut', data.error || (r.status + ' ' + r.statusText));
+
+      reference = data.reference;
+      lastUrl = data.url;
+
+      const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(data.qrSvg);
+      el('genOut').innerHTML = `
+        <div>Reference: <span class="mono">${reference}</span></div>
+        <div style="margin-top:8px"><a href="${lastUrl}">Open in wallet</a></div>
+        <div class="qr" id="qrBox"><img src="${svgDataUrl}" alt="QR" style="display:block;width:240px;height:240px"></div>
+        <div class="mono" style="margin-top:8px;">URL: ${lastUrl}</div>
+      `;
+    } catch (e) {
+      showError('genOut', e);
+    }
+  };
+
+  // 2) Poll status
+  el('btnPoll').onclick = async () => {
+    try {
+      if (!reference) return showError('status', 'No reference yet — generate a QR first.');
+      const r = await fetch('/api/status?reference=' + encodeURIComponent(reference));
+      const data = await r.json();
+      el('status').innerText = JSON.stringify(data, null, 2);
+    } catch (e) {
+      showError('status', e);
+    }
+  };
+
+  // 3) Issue token
+  el('btnIssue').onclick = async () => {
+    try {
+      if (!reference) return alert('Generate a QR first.');
+      const userPubkey = (el('pubkey').value || '').trim();
+      if (!userPubkey) return alert('Enter your wallet public key.');
+      const r = await fetch('/api/issue', {
+        method:'POST',
+        headers: {'content-type':'application/json'},
+        body: JSON.stringify({ reference, userPubkey })
+      });
+      const data = await r.json();
+      if (!data.ok) return showError('tokenOut', data);
+      jwtToken = data.token;
+      el('tokenOut').innerText = JSON.stringify(data, null, 2);
+    } catch (e) {
+      showError('tokenOut', e);
+    }
+  };
+
+  // 4) Infer
+  el('btnInfer').onclick = async () => {
+    try {
+      if (!jwtToken) return alert('Issue a token first.');
+      const prompt = el('prompt').value;
+      const r = await fetch('/v1/infer', {
+        method:'POST',
+        headers: {
+          'content-type':'application/json',
+          'authorization':'Bearer ' + jwtToken
+        },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await r.json();
+      el('inferOut').innerText = JSON.stringify(data, null, 2);
+    } catch (e) {
+      showError('inferOut', e);
+    }
+  };
 </script>
 </body>
 </html>
