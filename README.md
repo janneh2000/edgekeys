@@ -53,3 +53,7 @@ Built by: Alie  Janneh (X:@cjanneh2000, github:janneh2000)
 ## 🎥 Demo
 - <https://youtu.be/X7GlR6NHW9c>
 
+## 🪙 USDC (SPL) on Devnet
+Uses `spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` in the Solana Pay URL.
+
+
